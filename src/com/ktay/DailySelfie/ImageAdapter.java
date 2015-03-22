@@ -1,7 +1,8 @@
 package com.ktay.DailySelfie;
 
 import android.content.Context;
-import android.net.Uri;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -49,8 +50,32 @@ public class ImageAdapter extends BaseAdapter {
             imageView = (ImageView) convertView;
         }
 
-        imageView.setImageURI(Uri.fromFile((File) getItem(position)));
+        Bitmap bitmap = decodeScaledImage(imageView, (File) getItem(position));
+        imageView.setImageBitmap(bitmap);
 
         return imageView;
+    }
+
+    private Bitmap decodeScaledImage(ImageView imageView, File imageFile) {
+        // Get the dimensions of the View
+        int targetW = imageView.getLayoutParams().width;
+        int targetH = imageView.getLayoutParams().height;
+
+        // Get the dimensions of the bitmap
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        bmOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(imageFile.getPath(), bmOptions);
+        int photoW = bmOptions.outWidth;
+        int photoH = bmOptions.outHeight;
+
+        // Determine how much to scale down the image
+        int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
+
+        // Decode the image file into a Bitmap sized to fill the View
+        bmOptions.inJustDecodeBounds = false;
+        bmOptions.inSampleSize = scaleFactor;
+        bmOptions.inPurgeable = true;
+
+        return BitmapFactory.decodeFile(imageFile.getPath(), bmOptions);
     }
 }
