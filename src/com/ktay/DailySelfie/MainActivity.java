@@ -1,6 +1,9 @@
 package com.ktay.DailySelfie;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -28,11 +31,13 @@ public class MainActivity extends Activity {
     private static final int CAPTURE_IMAGE_ACTIVITY_REQ_CODE = 100;
     private static final int MEDIA_TYPE_IMAGE = 1;
     private static final String DIR_NAME = "DailySelfie";
+    private static final long ALARM_INTERVAL_TWO_MIN = 120000L;
 
     private File mMediaStorageDir;
     private List<File> mImageList;
     private ImageAdapter mImageAdapter;
     private File mCurrentImageFile;
+    private AlarmManager mAlarmManager;
 
     /**
      * Called when the activity is first created.
@@ -44,24 +49,38 @@ public class MainActivity extends Activity {
 
         initMediaStorageDir();
 
-        if (mMediaStorageDir != null) {
-            mImageList = new LinkedList<File>(Arrays.asList(mMediaStorageDir.listFiles()));
-            GridView gridView = (GridView) findViewById(R.id.gridView);
-            mImageAdapter = new ImageAdapter(this, mImageList);
-            gridView.setAdapter(mImageAdapter);
-
-            gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    Intent viewFullImageIntent = new Intent(MainActivity.this, ImageFullViewActivity.class);
-                    viewFullImageIntent.putExtra(ImageFullViewActivity.IMAGE_URI, Uri.fromFile((File) mImageAdapter
-                            .getItem(position)));
-
-                    startActivity(viewFullImageIntent);
-                }
-            });
+        if (mMediaStorageDir == null) {
+            return;
         }
 
+        mImageList = new LinkedList<File>(Arrays.asList(mMediaStorageDir.listFiles()));
+        GridView gridView = (GridView) findViewById(R.id.gridView);
+        mImageAdapter = new ImageAdapter(this, mImageList);
+        gridView.setAdapter(mImageAdapter);
+
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent viewFullImageIntent = new Intent(MainActivity.this, ImageFullViewActivity.class);
+                viewFullImageIntent.putExtra(ImageFullViewActivity.IMAGE_URI, Uri.fromFile((File) mImageAdapter
+                        .getItem(position)));
+
+                startActivity(viewFullImageIntent);
+            }
+        });
+
+        setupAlarm();
+
+    }
+
+    private void setupAlarm() {
+        mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        Intent notidicationReceiverIntent = new Intent(MainActivity.this, AlarmNotificationReceiver.class);
+        PendingIntent notificationReceiverPendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, notidicationReceiverIntent,
+                0);
+        mAlarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, ALARM_INTERVAL_TWO_MIN, ALARM_INTERVAL_TWO_MIN,
+                notificationReceiverPendingIntent);
     }
 
     @Override
