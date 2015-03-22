@@ -2,4 +2,5 @@
 <resources>
 	<string name="app_name">DailySelfie</string>
 	<string name="action_camera">Camera</string>
+	<string name="error_unable_to_access_storage">Unable to access storage</string>
 </resources>
