@@ -2,7 +2,6 @@ package com.ktay.DailySelfie;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -11,6 +10,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 
@@ -23,7 +24,7 @@ import java.util.List;
 
 public class MainActivity extends Activity {
 
-    private static final String TAG = "DailySelfie";
+    private static final String TAG = "MainActivity";
     private static final int CAPTURE_IMAGE_ACTIVITY_REQ_CODE = 100;
     private static final int MEDIA_TYPE_IMAGE = 1;
     private static final String DIR_NAME = "DailySelfie";
@@ -48,6 +49,17 @@ public class MainActivity extends Activity {
             GridView gridView = (GridView) findViewById(R.id.gridView);
             mImageAdapter = new ImageAdapter(this, mImageList);
             gridView.setAdapter(mImageAdapter);
+
+            gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Intent viewFullImageIntent = new Intent(MainActivity.this, ImageFullViewActivity.class);
+                    viewFullImageIntent.putExtra(ImageFullViewActivity.IMAGE_URI, Uri.fromFile((File) mImageAdapter
+                            .getItem(position)));
+
+                    startActivity(viewFullImageIntent);
+                }
+            });
         }
 
     }
