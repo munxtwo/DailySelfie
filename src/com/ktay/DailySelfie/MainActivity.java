@@ -16,7 +16,10 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 public class MainActivity extends Activity {
 
@@ -25,7 +28,10 @@ public class MainActivity extends Activity {
     private static final int MEDIA_TYPE_IMAGE = 1;
     private static final String DIR_NAME = "DailySelfie";
 
-    private File mediaStorageDir;
+    private File mMediaStorageDir;
+    private List<File> mImageList;
+    private ImageAdapter mImageAdapter;
+    private File mCurrentImageFile;
 
     /**
      * Called when the activity is first created.
@@ -37,8 +43,13 @@ public class MainActivity extends Activity {
 
         initMediaStorageDir();
 
-        GridView gridView = (GridView) findViewById(R.id.gridView);
-        gridView.setAdapter(new ImageAdapter(this));
+        if (mMediaStorageDir != null) {
+            mImageList = new LinkedList<File>(Arrays.asList(mMediaStorageDir.listFiles()));
+            GridView gridView = (GridView) findViewById(R.id.gridView);
+            mImageAdapter = new ImageAdapter(this, mImageList);
+            gridView.setAdapter(mImageAdapter);
+        }
+
     }
 
     @Override
@@ -66,9 +77,8 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQ_CODE) {
             if (resultCode == RESULT_OK) {
-                Bundle extras = data.getExtras();
-                Bitmap imageBitmap = (Bitmap) extras.get("data");
-//                mImageView.setImageBitmap(imageBitmap);
+                mImageList.add(mCurrentImageFile);
+                mImageAdapter.notifyDataSetChanged();
             }
         }
     }
@@ -77,12 +87,12 @@ public class MainActivity extends Activity {
         Intent captureImageIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
         if (captureImageIntent.resolveActivity(getPackageManager()) != null) {
-            File imageFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+            mCurrentImageFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
 
-            if (imageFile == null) {
+            if (mCurrentImageFile == null) {
                 Toast.makeText(this, R.string.error_unable_to_access_storage, Toast.LENGTH_SHORT).show();
             } else {
-                captureImageIntent.putExtra(MediaStore.EXTRA_OUTPUT, getOutputMediaFileUri(imageFile));
+                captureImageIntent.putExtra(MediaStore.EXTRA_OUTPUT, getOutputMediaFileUri(mCurrentImageFile));
                 startActivityForResult(captureImageIntent, CAPTURE_IMAGE_ACTIVITY_REQ_CODE);
             }
         }
@@ -90,7 +100,7 @@ public class MainActivity extends Activity {
 
     private File getOutputMediaFile(int type){
         // Create the storage directory if it does not exist
-        if (mediaStorageDir == null){
+        if (mMediaStorageDir == null){
             return null;
         }
 
@@ -98,7 +108,7 @@ public class MainActivity extends Activity {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         File mediaFile;
         if (type == MEDIA_TYPE_IMAGE){
-            mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+            mediaFile = new File(mMediaStorageDir.getPath() + File.separator +
                     "IMG_"+ timeStamp + ".jpg");
         } else {
             return null;
@@ -115,18 +125,18 @@ public class MainActivity extends Activity {
         if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
             Log.e(TAG, "media storage is not mounted");
             Toast.makeText(this, R.string.error_media_storage_not_mounted, Toast.LENGTH_SHORT).show();
-            mediaStorageDir = null;
+            mMediaStorageDir = null;
         }
 
-        mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), DIR_NAME);
+        mMediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), DIR_NAME);
 
         // Create the storage directory if it does not exist
-        if (!mediaStorageDir.exists()){
-            if (!mediaStorageDir.mkdirs()){
+        if (!mMediaStorageDir.exists()){
+            if (!mMediaStorageDir.mkdirs()){
                 Log.e(TAG, "failed to create directory");
                 Toast.makeText(this, R.string.error_failed_to_create_dir, Toast.LENGTH_SHORT).show();
 
-                mediaStorageDir = null;
+                mMediaStorageDir = null;
             }
         }
     }
