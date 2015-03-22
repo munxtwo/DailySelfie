@@ -3,8 +3,10 @@ package com.ktay.DailySelfie;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -27,6 +29,8 @@ import java.util.List;
 
 public class MainActivity extends Activity {
 
+    public static final int IS_ALIVE = Activity.RESULT_FIRST_USER;
+    public static final String IS_ALIVE_ACTION = "com.ktay.DailySelfie.IS_ALIVE";
     private static final String TAG = "MainActivity";
     private static final int CAPTURE_IMAGE_ACTIVITY_REQ_CODE = 100;
     private static final int MEDIA_TYPE_IMAGE = 1;
@@ -38,6 +42,7 @@ public class MainActivity extends Activity {
     private ImageAdapter mImageAdapter;
     private File mCurrentImageFile;
     private AlarmManager mAlarmManager;
+    private BroadcastReceiver mIsAliveReceiver;
 
     /**
      * Called when the activity is first created.
@@ -70,6 +75,7 @@ public class MainActivity extends Activity {
         });
 
         setupAlarm();
+        setupBroadcastReceiver();
 
     }
 
@@ -81,6 +87,40 @@ public class MainActivity extends Activity {
                 0);
         mAlarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, ALARM_INTERVAL_TWO_MIN, ALARM_INTERVAL_TWO_MIN,
                 notificationReceiverPendingIntent);
+
+    }
+
+    private void setupBroadcastReceiver() {
+        mIsAliveReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+                if (isOrderedBroadcast()) {
+                    setResultCode(MainActivity.IS_ALIVE);
+                }
+
+            }
+        };
+    }
+
+    // Register the BroadcastReceiver
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        getApplicationContext().registerReceiver(mIsAliveReceiver, new IntentFilter(IS_ALIVE_ACTION));
+
+    }
+
+    @Override
+    protected void onPause() {
+
+        if (mIsAliveReceiver != null) {
+            getApplicationContext().unregisterReceiver(mIsAliveReceiver);
+        }
+
+        super.onPause();
+
     }
 
     @Override

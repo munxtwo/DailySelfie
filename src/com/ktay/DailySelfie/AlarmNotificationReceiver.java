@@ -14,23 +14,33 @@ public class AlarmNotificationReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Intent restartMainActivityIntent = new Intent(context, MainActivity.class);
+        final Intent restartMainActivityIntent = new Intent(context, MainActivity.class);
         restartMainActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
-                restartMainActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        context.sendOrderedBroadcast(new Intent(MainActivity.IS_ALIVE_ACTION), null, new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
 
-        Notification.Builder notificationBuilder = new Notification.Builder(context)
-                .setTicker(NOTIFICATION_TEXT)
-                .setSmallIcon(android.R.drawable.ic_menu_camera)
-                .setContentIntent(contentIntent)
-                .setContentText(NOTIFICATION_TEXT)
-                .setContentTitle(context.getResources().getString(R.string.app_name))
-                .setAutoCancel(true);
+                if (getResultCode() != MainActivity.IS_ALIVE) {
 
-        NotificationManager mNotificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                    PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
+                            restartMainActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        mNotificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+                    Notification.Builder notificationBuilder = new Notification.Builder(context)
+                            .setTicker(NOTIFICATION_TEXT)
+                            .setSmallIcon(android.R.drawable.ic_menu_camera)
+                            .setContentIntent(contentIntent)
+                            .setContentText(NOTIFICATION_TEXT)
+                            .setContentTitle(context.getResources().getString(R.string.app_name))
+                            .setAutoCancel(true);
+
+                    NotificationManager mNotificationManager =
+                            (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+                    mNotificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+                }
+            }
+        }, null, 0, null, null);
+
     }
 }
